@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-The lab is served at [http://127.0.0.1:4317](http://127.0.0.1:4317).
+The lab is served at [http://127.0.0.1:4317/neuropharm-lab/](http://127.0.0.1:4317/neuropharm-lab/).
 
 ```bash
 npm run build
