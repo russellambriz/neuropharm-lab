@@ -9,6 +9,7 @@ export function LabView() {
   const pool = lab.tab === 'drugs' ? DRUGS : DISEASES
   const items = pool.filter((entry) => `${entry.name} ${entry.kicker} ${entry.line} ${entry.chip}`.toLowerCase().includes(q))
   const instrument = lab.params.instrument === 'endplate' ? 'Endplate potential' : 'Postsynaptic membrane'
+  const comparing = Boolean(lab.selection.drug || lab.selection.disease)
   const pip = lab.params.transmitter === 'da' ? 'var(--da)' : lab.params.transmitter === 'ht' ? 'var(--ht)' : lab.params.transmitter === 'gaba' ? 'var(--gaba)' : lab.params.transmitter === 'ach' ? 'var(--ach)' : 'var(--glu)'
   return (
     <div className="workspace">
@@ -70,30 +71,46 @@ export function LabView() {
             <span><i className="pip cleft" style={{ background: pip, boxShadow: `0 0 8px ${pip}` }} /> In the cleft</span>
           </div>
         </div>
-        <div className="trace-card">
+        <div className={`trace-card ${comparing ? 'with-ba' : ''}`}>
           <div className="trace-head">
             <h2>{instrument}</h2>
-            <p>400 ms · afferent held steady</p>
+            <p>{comparing ? '400 ms · baseline, then this condition' : '400 ms · afferent held steady'}</p>
           </div>
-          <div className="meters">
-            <div className="meter">
-              <b>{formatHz(lab.readout.firingHz)}</b>
-              <span>Hz firing</span>
+          {comparing ? (
+            <BeforeAfter
+              firing={[lab.baselineReadout.firingHz, lab.readout.firingHz]}
+              rest={[lab.baselineReadout.restMv, lab.readout.restMv]}
+              fill={[lab.baselineReadout.vesicleFill, lab.readout.vesicleFill]}
+              cleft={[lab.baselineReadout.cleft, lab.readout.cleft]}
+              transmitter={lab.params.transmitterName}
+            />
+          ) : (
+            <div className="meters">
+              <div className="meter">
+                <b>{formatHz(lab.readout.firingHz)}</b>
+                <span>Hz firing</span>
+              </div>
+              <div className="meter">
+                <b>{formatMv(lab.readout.restMv)}</b>
+                <span>mV rest</span>
+              </div>
+              <div className="meter">
+                <b>{lab.readout.vesicleFill.toFixed(2)}</b>
+                <span>Vesicle fill</span>
+              </div>
+              <div className="meter">
+                <b>{lab.readout.cleft.toFixed(2)}</b>
+                <span>Cleft {lab.params.transmitterName}</span>
+              </div>
             </div>
-            <div className="meter">
-              <b>{formatMv(lab.readout.restMv)}</b>
-              <span>mV rest</span>
+          )}
+          {comparing ? (
+            <div className="trace-key">
+              <span><i className="base" /> Baseline</span>
+              <span><i className="now" /> This condition</span>
             </div>
-            <div className="meter">
-              <b>{lab.readout.vesicleFill.toFixed(2)}</b>
-              <span>Vesicle fill</span>
-            </div>
-            <div className="meter">
-              <b>{lab.readout.cleft.toFixed(2)}</b>
-              <span>Cleft {lab.params.transmitterName}</span>
-            </div>
-          </div>
-          <TraceCanvas sim={lab.condition} />
+          ) : null}
+          <TraceCanvas sim={lab.condition} baseline={comparing ? lab.baseline : null} />
           <p className="eq">C dV/dt = −gNa m³h (V−ENa) − gK n⁴ (V−EK) − gL (V−EL) + Isyn</p>
         </div>
       </section>
@@ -106,4 +123,52 @@ export function LabView() {
       </aside>
     </div>
   )
+}
+
+function BeforeAfter({
+  firing,
+  rest,
+  fill,
+  cleft,
+  transmitter,
+}: {
+  firing: [number, number]
+  rest: [number, number]
+  fill: [number, number]
+  cleft: [number, number]
+  transmitter: string
+}) {
+  const rows = [
+    { k: 'Hz firing', base: formatHz(firing[0]), cond: formatHz(firing[1]), d: signedDelta(firing[0], firing[1], 0) },
+    { k: 'mV rest', base: formatMv(rest[0]), cond: formatMv(rest[1]), d: signedDelta(rest[0], rest[1], 0) },
+    { k: 'Vesicle fill', base: fill[0].toFixed(2), cond: fill[1].toFixed(2), d: signedDelta(fill[0], fill[1], 2) },
+    { k: `Cleft ${transmitter}`, base: cleft[0].toFixed(2), cond: cleft[1].toFixed(2), d: signedDelta(cleft[0], cleft[1], 2) },
+  ]
+  return (
+    <div className="ba">
+      <div className="ba-head">
+        <span />
+        <span>Before</span>
+        <span>After</span>
+        <span>Δ</span>
+      </div>
+      {rows.map((row) => (
+        <div className="ba-row" key={row.k}>
+          <span className="ba-k">{row.k}</span>
+          <b>{row.base}</b>
+          <b className="now">{row.cond}</b>
+          <em>{row.d}</em>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function signedDelta(base: number, cond: number, digits: number): string {
+  const left = digits === 0 ? Math.round(base) : Number(base.toFixed(digits))
+  const right = digits === 0 ? Math.round(cond) : Number(cond.toFixed(digits))
+  const delta = right - left
+  const abs = Math.abs(delta).toFixed(digits)
+  if (Number(abs) === 0) return digits === 0 ? '0' : (0).toFixed(digits)
+  return `${delta > 0 ? '+' : '−'}${abs}`
 }

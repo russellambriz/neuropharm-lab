@@ -1140,6 +1140,197 @@ button:focus-visible, input:focus-visible {
 
 .slot button.clear:hover { color: var(--ink); }
 
+button.slot {
+  text-align: left;
+  touch-action: manipulation;
+}
+
+.slot .go {
+  display: none;
+  margin-left: auto;
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.picker-root {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.picker-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(8, 9, 7, 0.62);
+}
+
+.picker {
+  position: relative;
+  z-index: 1;
+  max-height: min(78dvh, 680px);
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 14px 16px calc(18px + env(safe-area-inset-bottom));
+  border: 0;
+  border-top: 1px solid var(--line-strong);
+  border-radius: 18px 18px 0 0;
+  background: #14150f;
+  box-shadow: 0 -28px 70px rgba(0, 0, 0, 0.45);
+}
+
+.picker-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+}
+
+.picker-head h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 28px;
+  letter-spacing: -0.03em;
+}
+
+.picker-list {
+  overflow: auto;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 10px;
+  border-radius: 10px;
+  text-align: left;
+  touch-action: manipulation;
+}
+
+.pick.on {
+  background: var(--brass-dim);
+  box-shadow: inset 2px 0 0 var(--brass);
+}
+
+.pick-name {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+.pick-line {
+  font-size: 13px;
+  color: var(--soft);
+  line-height: 1.35;
+}
+
+.picker-tune {
+  flex: none;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.picker-tune .track input[type='range'] {
+  height: 44px;
+  top: -21px;
+}
+
+.ba {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 4px 0;
+}
+
+.ba-head, .ba-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) auto auto auto;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.ba-head {
+  padding: 2px 0 0;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--soft);
+}
+
+.ba-head span:not(:first-child) { text-align: right; }
+
+.ba-row {
+  padding: 6px 0;
+  border-top: 1px solid rgba(243, 238, 228, 0.08);
+}
+
+.ba-k {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--soft);
+  line-height: 1.25;
+}
+
+.ba-row b {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  text-align: right;
+}
+
+.ba-row b.now, .ba-row em { color: var(--brass); }
+
+.ba-row em {
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  min-width: 3.4em;
+  text-align: right;
+}
+
+.trace-key {
+  display: flex;
+  gap: 16px;
+  padding: 6px 6px 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--soft);
+}
+
+.trace-key span { display: inline-flex; align-items: center; gap: 6px; }
+
+.trace-key i {
+  width: 18px;
+  height: 2px;
+  border-radius: 99px;
+  display: inline-block;
+}
+
+.trace-key i.base { background: rgba(231, 224, 212, 0.45); }
+.trace-key i.now { background: var(--brass); }
+
+.trace-card.with-ba { height: auto; }
+.trace-card.with-ba canvas.trace { height: 168px; }
+
 .browse {
   display: none;
 }
@@ -1195,13 +1386,21 @@ button:focus-visible, input:focus-visible {
     flex-direction: column;
     align-items: stretch;
   }
-  .slot { min-width: 0; width: 100%; flex: none; height: 36px; padding-right: 10px; }
-  .slot .k { display: none; }
+  .slot {
+    min-width: 0;
+    width: 100%;
+    flex: none;
+    height: auto;
+    min-height: 44px;
+    padding: 8px 12px;
+  }
+  .slot .k { display: inline; flex: none; }
+  .slot .go { display: inline; }
   .slot .v {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 13.5px;
+    font-size: 15px;
   }
   .top-right {
     order: 2;
@@ -1272,7 +1471,8 @@ button:focus-visible, input:focus-visible {
   }
   .trace-head h2 { font-size: 22px; line-height: 1.15; }
   .trace-head p { line-height: 1.35; }
-  .trace-card canvas.trace { height: 132px; }
+  .trace-card canvas.trace { height: 150px; }
+  .trace-card.with-ba canvas.trace { height: 176px; }
   .eq {
     white-space: normal;
     overflow-wrap: anywhere;

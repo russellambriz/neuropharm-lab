@@ -50,14 +50,22 @@ export function StageCanvas({ sim, which, mini = false }: { sim: Simulator | nul
   return <canvas ref={ref} aria-hidden="true" />
 }
 
-export function TraceCanvas({ sim, compact = false }: { sim: Simulator | null; compact?: boolean }) {
+export function TraceCanvas({
+  sim,
+  compact = false,
+  baseline = null,
+}: {
+  sim: Simulator | null
+  compact?: boolean
+  baseline?: Simulator | null
+}) {
   const ref = useRef<HTMLCanvasElement>(null)
   const { subscribe } = useLab()
   useEffect(() => {
     const canvas = ref.current
     if (!canvas || !sim) return
     const paint = () => {
-      bindCanvas(canvas, (ctx, w, h) => drawTrace(ctx, w, h, sim, compact))
+      bindCanvas(canvas, (ctx, w, h) => drawTrace(ctx, w, h, sim, compact, baseline))
     }
     paint()
     const stop = subscribe(paint)
@@ -67,6 +75,12 @@ export function TraceCanvas({ sim, compact = false }: { sim: Simulator | null; c
       stop()
       observer.disconnect()
     }
-  }, [sim, compact, subscribe])
-  return <canvas ref={ref} className={compact ? undefined : 'trace'} aria-label="Membrane potential trace" />
+  }, [sim, compact, baseline, subscribe])
+  return (
+    <canvas
+      ref={ref}
+      className={compact ? undefined : 'trace'}
+      aria-label={baseline ? 'Membrane potential, baseline and this condition' : 'Membrane potential trace'}
+    />
+  )
 }

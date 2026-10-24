@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react'
-import { DISCLAIMER, diseaseById, drugById } from '../content/library.ts'
+import { useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import { DISCLAIMER, DISEASES, DRUGS, diseaseById, drugById } from '../content/library.ts'
 import { labelDisease, labelDrug } from '../model/scene.ts'
 import type { SceneParams } from '../model/types.ts'
 import { useLab } from '../state/lab.tsx'
@@ -15,45 +16,53 @@ export function toneClass(params: SceneParams): string {
 export function Header() {
   const lab = useLab()
   const { selection } = lab
+  const [picker, setPicker] = useState<null | 'drug' | 'disease'>(null)
   const disease = selection.disease ? diseaseById(selection.disease) : null
   const drug = selection.drug ? drugById(selection.drug) : null
+  const openPicker = (kind: 'drug' | 'disease') => {
+    lab.setSheet(false)
+    setPicker(kind)
+  }
   return (
-    <header className="top">
-      <button className="brand" onClick={() => lab.setView('lab')} aria-label="NeuroPharm Lab, back to the lab">
-        <span className="brand-mark">NeuroPharm Lab</span>
-      </button>
-      <div className="top-center">
-        <Slot
-          kicker="Disease"
-          value={disease ? labelDisease(disease.id) : 'None'}
-          dose={disease ? selection.severity.toFixed(2) : null}
-          ghost={!disease}
-          onClear={disease ? () => lab.selectDisease(null) : undefined}
-        />
-        <Slot
-          kicker="Drug"
-          value={drug ? labelDrug(drug.id) : 'None'}
-          dose={drug ? selection.dose.toFixed(2) : null}
-          ghost={!drug}
-          onClear={drug ? () => lab.selectDrug(null) : undefined}
-        />
-      </div>
-      <div className="top-right">
-        <button className="browse linkish" onClick={() => lab.setSheet(!lab.sheet)}>
-          {lab.sheet ? 'Close' : 'Browse'}
+    <>
+      <header className="top">
+        <button className="brand" onClick={() => lab.setView('lab')} aria-label="NeuroPharm Lab, back to the lab">
+          <span className="brand-mark">NeuroPharm Lab</span>
         </button>
-        {lab.view === 'library' ? (
-          <button className="linkish" onClick={() => lab.setView('lab')}>Open in the lab</button>
-        ) : (
-          <button className="linkish" onClick={() => lab.setView('library')}>Library</button>
-        )}
-        <button className={`switch ${lab.view === 'compare' ? 'on' : ''}`} onClick={lab.toggleCompare} aria-pressed={lab.view === 'compare'}>
-          <i />
-          Compare
-        </button>
-        <span className="top-note">Not medical advice</span>
-      </div>
-    </header>
+        <div className="top-center">
+          <Slot
+            kicker="Disease"
+            value={disease ? labelDisease(disease.id) : 'None'}
+            dose={disease ? selection.severity.toFixed(2) : null}
+            ghost={!disease}
+            onOpen={() => openPicker('disease')}
+          />
+          <Slot
+            kicker="Drug"
+            value={drug ? labelDrug(drug.id) : 'None'}
+            dose={drug ? selection.dose.toFixed(2) : null}
+            ghost={!drug}
+            onOpen={() => openPicker('drug')}
+          />
+        </div>
+        <div className="top-right">
+          <button className="browse linkish" onClick={() => lab.setSheet(!lab.sheet)}>
+            {lab.sheet ? 'Close' : 'Browse'}
+          </button>
+          {lab.view === 'library' ? (
+            <button className="linkish" onClick={() => lab.setView('lab')}>Open in the lab</button>
+          ) : (
+            <button className="linkish" onClick={() => lab.setView('library')}>Library</button>
+          )}
+          <button className={`switch ${lab.view === 'compare' ? 'on' : ''}`} onClick={lab.toggleCompare} aria-pressed={lab.view === 'compare'}>
+            <i />
+            Before / After
+          </button>
+          <span className="top-note">Not medical advice</span>
+        </div>
+      </header>
+      {picker ? <ChoiceSheet kind={picker} onClose={() => setPicker(null)} /> : null}
+    </>
   )
 }
 
@@ -62,26 +71,104 @@ function Slot({
   value,
   dose,
   ghost,
-  onClear,
+  onOpen,
 }: {
   kicker: string
   value: string
   dose: string | null
   ghost: boolean
-  onClear?: () => void
+  onOpen: () => void
 }) {
   return (
-    <div className={`slot ${ghost ? 'ghost' : ''}`}>
+    <button type="button" className={`slot ${ghost ? 'ghost' : ''}`} onClick={onOpen} aria-haspopup="dialog">
       <span className="k">{kicker}</span>
       <span className="v">{value}</span>
       {dose ? <span className="dose">{dose}</span> : null}
-      {onClear ? (
-        <button className="clear" onClick={onClear} aria-label={`Clear ${kicker.toLowerCase()}`}>
-          ×
-        </button>
-      ) : null}
+      <span className="go">Choose</span>
+    </button>
+  )
+}
+
+function ChoiceSheet({ kind, onClose }: { kind: 'drug' | 'disease'; onClose: () => void }) {
+  const lab = useLab()
+  const drugs = kind === 'drug'
+  const selected = drugs ? lab.selection.drug : lab.selection.disease
+  const title = drugs ? 'Choose a drug' : 'Choose a disease'
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = previous
+    }
+  }, [onClose])
+  const sheet = (
+    <div className="picker-root">
+      <button type="button" className="picker-scrim" aria-label="Close the list" onClick={onClose} />
+      <div className="picker" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="picker-head">
+          <h2>{title}</h2>
+          <button type="button" className="linkish" onClick={onClose}>
+            Done
+          </button>
+        </div>
+        <div className="picker-list">
+          <button type="button" className={`pick ${selected ? '' : 'on'}`} onClick={() => (drugs ? lab.chooseDrug(null) : lab.chooseDisease(null))}>
+            <span className="pick-name">None</span>
+            <span className="pick-line">{drugs ? 'No drug on this synapse' : 'No disease on this synapse'}</span>
+          </button>
+          {drugs
+            ? DRUGS.map((entry) => (
+                <button
+                  type="button"
+                  key={entry.id}
+                  className={`pick ${selected === entry.id ? 'on' : ''}`}
+                  onClick={() => lab.chooseDrug(entry.id)}
+                >
+                  <span className="pick-name">{entry.name}</span>
+                  <span className="pick-line">{entry.line}</span>
+                </button>
+              ))
+            : DISEASES.map((entry) => (
+                <button
+                  type="button"
+                  key={entry.id}
+                  className={`pick ${selected === entry.id ? 'on' : ''}`}
+                  onClick={() => lab.chooseDisease(entry.id)}
+                >
+                  <span className="pick-name">{entry.name}</span>
+                  <span className="pick-line">{entry.line}</span>
+                </button>
+              ))}
+        </div>
+        {drugs && lab.selection.drug ? (
+          <div className="picker-tune">
+            <Slider
+              label={`Dose · ${labelDrug(lab.selection.drug)}`}
+              value={lab.selection.dose}
+              onChange={lab.setDose}
+              hint="Unitless. Not milligrams, and not a prescription."
+            />
+          </div>
+        ) : null}
+        {!drugs && lab.selection.disease ? (
+          <div className="picker-tune">
+            <Slider
+              label={`Severity · ${labelDisease(lab.selection.disease)}`}
+              value={lab.selection.severity}
+              onChange={lab.setSeverity}
+              hint="Unitless. 0 is healthy tissue, 1 is the far end of the model."
+            />
+          </div>
+        ) : null}
+      </div>
     </div>
   )
+  return createPortal(sheet, document.body)
 }
 
 export function Slider({

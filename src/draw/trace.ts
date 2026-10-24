@@ -1,7 +1,17 @@
 import { SIGNAL } from './palette.ts'
 import type { Simulator } from '../model/sim.ts'
 
-export function drawTrace(ctx: CanvasRenderingContext2D, w: number, h: number, sim: Simulator, compact = false): void {
+const BRASS = '#d4b483'
+const BASELINE = 'rgba(231, 224, 212, 0.42)'
+
+export function drawTrace(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  sim: Simulator,
+  compact = false,
+  baseline: Simulator | null = null,
+): void {
   ctx.clearRect(0, 0, w, h)
   const left = compact ? 28 : 46
   const top = compact ? 8 : 12
@@ -37,15 +47,26 @@ export function drawTrace(ctx: CanvasRenderingContext2D, w: number, h: number, s
     ctx.fillText('THRESHOLD', w - right, yOf(-55) - 4)
   }
 
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  if (baseline) {
+    const basePts = baseline.trace()
+    if (basePts.length > 1) {
+      ctx.strokeStyle = BASELINE
+      ctx.lineWidth = compact ? 1.1 : 1.35
+      strokePts(ctx, basePts, xOf, yOf)
+    }
+  }
+
   const pts = sim.trace()
   if (pts.length > 1) {
-    ctx.lineJoin = 'round'
-    ctx.lineCap = 'round'
-    ctx.strokeStyle = SIGNAL
-    ctx.globalAlpha = 0.16
+    const ink = baseline ? BRASS : SIGNAL
+    ctx.strokeStyle = ink
+    ctx.globalAlpha = baseline ? 0.2 : 0.16
     ctx.lineWidth = compact ? 4 : 6
     strokePts(ctx, pts, xOf, yOf)
     ctx.globalAlpha = 1
+    ctx.strokeStyle = ink
     ctx.lineWidth = 1.55
     strokePts(ctx, pts, xOf, yOf)
   }

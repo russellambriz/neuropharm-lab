@@ -31,6 +31,8 @@ interface LabValue {
   selection: Selection
   selectDrug: (id: DrugId | null) => void
   selectDisease: (id: DiseaseId | null) => void
+  chooseDrug: (id: DrugId | null) => void
+  chooseDisease: (id: DiseaseId | null) => void
   setDose: (dose: number) => void
   setSeverity: (severity: number) => void
   toggleCompare: () => void
@@ -223,6 +225,24 @@ export function LabProvider({ children }: { children: ReactNode }) {
     setSheet(false)
   }
 
+  const chooseDrug = (id: DrugId | null) => {
+    setSelection((prev) => {
+      if (id === null) return { ...prev, drug: null }
+      if (prev.drug === id) return prev
+      return { ...prev, drug: id, dose: drugById(id).defaultDose }
+    })
+    setTab('drugs')
+  }
+
+  const chooseDisease = (id: DiseaseId | null) => {
+    setSelection((prev) => {
+      if (id === null) return { ...prev, disease: null }
+      if (prev.disease === id) return prev
+      return { ...prev, disease: id, severity: diseaseById(id).defaultSeverity }
+    })
+    setTab('diseases')
+  }
+
   const value: LabValue = {
     view,
     setView,
@@ -235,6 +255,8 @@ export function LabProvider({ children }: { children: ReactNode }) {
     selection,
     selectDrug,
     selectDisease,
+    chooseDrug,
+    chooseDisease,
     setDose: (dose) => setSelection((prev) => ({ ...prev, dose })),
     setSeverity: (severity) => setSelection((prev) => ({ ...prev, severity })),
     toggleCompare: () => setView((v) => (v === 'compare' ? 'lab' : 'compare')),
