@@ -1,0 +1,109 @@
+import { DISEASES, DRUGS, diseaseById } from '../content/library.ts'
+import { useLab } from '../state/lab.tsx'
+import { DossierBody, Search, Slider, formatHz, formatMv } from './bits.tsx'
+import { StageCanvas, TraceCanvas } from './canvases.tsx'
+
+export function LabView() {
+  const lab = useLab()
+  const q = lab.query.trim().toLowerCase()
+  const pool = lab.tab === 'drugs' ? DRUGS : DISEASES
+  const items = pool.filter((entry) => `${entry.name} ${entry.kicker} ${entry.line} ${entry.chip}`.toLowerCase().includes(q))
+  const instrument = lab.params.instrument === 'endplate' ? 'Endplate potential' : 'Postsynaptic membrane'
+  const pip = lab.params.transmitter === 'da' ? 'var(--da)' : lab.params.transmitter === 'ht' ? 'var(--ht)' : lab.params.transmitter === 'gaba' ? 'var(--gaba)' : lab.params.transmitter === 'ach' ? 'var(--ach)' : 'var(--glu)'
+  return (
+    <div className="workspace">
+      <aside className="rail">
+        <Search value={lab.query} onChange={lab.setQuery} placeholder="Search the library" />
+        <div className="tabs" role="tablist">
+          <button className={`tab ${lab.tab === 'drugs' ? 'on' : ''}`} onClick={() => lab.setTab('drugs')} role="tab" aria-selected={lab.tab === 'drugs'}>
+            Drugs
+          </button>
+          <button className={`tab ${lab.tab === 'diseases' ? 'on' : ''}`} onClick={() => lab.setTab('diseases')} role="tab" aria-selected={lab.tab === 'diseases'}>
+            Diseases
+          </button>
+        </div>
+        <div className="list">
+          {items.length === 0 ? <p className="hint" style={{ padding: '12px 4px' }}>Nothing in the library matches that.</p> : null}
+          {items.map((entry) => {
+            const on = entry.kind === 'drug' ? lab.selection.drug === entry.id : lab.selection.disease === entry.id
+            return (
+              <button
+                key={entry.id}
+                className={`item ${on ? 'on' : ''}`}
+                onClick={() => (entry.kind === 'drug' ? lab.selectDrug(entry.id) : lab.selectDisease(entry.id))}
+              >
+                <span className="name">{entry.name}</span>
+                <span className="meta">{entry.chip}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className="paired">
+          <div className="paired-label">{lab.pairing.kind === 'mismatch' ? 'Not on the same synapse' : 'On this synapse'}</div>
+          {lab.selection.disease ? (
+            <Slider
+              label={`Severity · ${diseaseById(lab.selection.disease).name}`}
+              value={lab.selection.severity}
+              onChange={lab.setSeverity}
+              hint="Unitless. 0 is healthy tissue, 1 is the far end of the model."
+            />
+          ) : null}
+          {lab.selection.drug ? (
+            <Slider label="Dose" value={lab.selection.dose} onChange={lab.setDose} hint="Unitless. Not milligrams, and not a prescription." />
+          ) : null}
+          {!lab.selection.drug && !lab.selection.disease ? <p className="hint">Choose a drug or a disease. The trace is a healthy synapse until you do.</p> : null}
+        </div>
+      </aside>
+      <section className="stage-col">
+        <div className="stage">
+          {lab.pairing.kind === 'mismatch' || lab.pairing.kind === 'warn' ? (
+            <div className="banner">
+              <strong>{lab.pairing.kind === 'mismatch' ? 'These two do not share a synapse. ' : 'Read this pair carefully. '}</strong>
+              {lab.pairing.note}
+            </div>
+          ) : null}
+          <StageCanvas sim={lab.condition} which="condition" />
+          <p className="stage-caption">Schematic · bouton enlarged · not to scale</p>
+          <div className="legend">
+            <span><i className="pip fill" style={{ background: pip }} /> In a vesicle</span>
+            <span><i className="pip empty" /> Empty vesicle</span>
+            <span><i className="pip cleft" style={{ background: pip, boxShadow: `0 0 8px ${pip}` }} /> In the cleft</span>
+          </div>
+        </div>
+        <div className="trace-card">
+          <div className="trace-head">
+            <h2>{instrument}</h2>
+            <p>400 ms · afferent held steady</p>
+          </div>
+          <div className="meters">
+            <div className="meter">
+              <b>{formatHz(lab.readout.firingHz)}</b>
+              <span>Hz firing</span>
+            </div>
+            <div className="meter">
+              <b>{formatMv(lab.readout.restMv)}</b>
+              <span>mV rest</span>
+            </div>
+            <div className="meter">
+              <b>{lab.readout.vesicleFill.toFixed(2)}</b>
+              <span>Vesicle fill</span>
+            </div>
+            <div className="meter">
+              <b>{lab.readout.cleft.toFixed(2)}</b>
+              <span>Cleft {lab.params.transmitterName}</span>
+            </div>
+          </div>
+          <TraceCanvas sim={lab.condition} />
+          <p className="eq">C dV/dt = −gNa m³h (V−ENa) − gK n⁴ (V−EK) − gL (V−EL) + Isyn</p>
+        </div>
+      </section>
+      <aside className="dossier">
+        <DossierBody>
+          <button className="linkish" style={{ marginTop: 14, alignSelf: 'flex-start' }} onClick={() => lab.setView('monograph')}>
+            Open the monograph
+          </button>
+        </DossierBody>
+      </aside>
+    </div>
+  )
+}

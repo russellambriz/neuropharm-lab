@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>NeuroPharm Lab — library</title>
+  <link rel="stylesheet" href="studio.css" />
+</head>
+<body>
+  <div class="screen tone-ht">
+
+    
+    <header class="top">
+      
+    <div class="brand">
+      <span class="brand-mark">NeuroPharm Lab</span>
+    </div>
+      <div class="top-center"><div class="slot"><span class="k">Disease</span><span class="v">Depression</span><span class="dose">0.60</span></div><div class="slot"><span class="k">Drug</span><span class="v">Sertraline</span><span class="dose">0.50</span></div></div>
+      <div class="top-right"><div class="linkish">Open in the lab</div><div class="top-note">Not medical advice</div></div>
+    </header>
+    <div class="lib-wrap">
+      <div class="library">
+        <section class="pane">
+          <div class="pane-head"><h2>Drugs</h2><span>12</span></div>
+          <div class="search"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6" cy="6" r="4.1" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M9.2 9.2 L12.2 12.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> Search drugs</div>
+          <div class="group">Monoamines</div><div class="entry on"><div class="name">Sertraline</div><div class="line">Blocks the serotonin transporter</div><span class="chip"><i class="dot ht"></i>5-HT</span></div><div class="entry"><div class="name">Cocaine</div><div class="line">Blocks DAT, NET, and SERT</div><span class="chip"><i class="dot da"></i>DA</span></div><div class="entry"><div class="name">Amphetamine</div><div class="line">Reverses DAT, empties vesicles</div><span class="chip"><i class="dot da"></i>DA</span></div><div class="entry"><div class="name">L-DOPA</div><div class="line">Precursor that refills dopamine</div><span class="chip"><i class="dot da"></i>DA</span></div><div class="group">Amino-acid receptors</div><div class="entry"><div class="name">Diazepam</div><div class="line">GABA-A modulator, not an agonist</div><span class="chip"><i class="dot gaba"></i>GABA</span></div><div class="entry"><div class="name">Morphine</div><div class="line">μ agonist; calcium-dependent release falls</div><span class="chip"><i class="dot glu"></i>Glu</span></div><div class="entry"><div class="name">Ketamine</div><div class="line">Blocks the NMDA pore from inside</div><span class="chip"><i class="dot glu"></i>NMDA</span></div><div class="entry"><div class="name">Ethanol</div><div class="line">Boosts GABA-A and blocks NMDA</div><span class="chip"><i class="dot mix"></i>GABA · NMDA</span></div><div class="group">Cholinergic and other</div><div class="entry"><div class="name">Nicotine</div><div class="line">Opens nAChRs, then desensitizes them</div><span class="chip"><i class="dot ach"></i>ACh</span></div><div class="entry"><div class="name">Caffeine</div><div class="line">Blocks adenosine A1 and A2A</div><span class="chip"><i class="dot ach"></i>A1</span></div><div class="entry"><div class="name">Botulinum toxin</div><div class="line">Cleaves SNAP-25; fusion stops</div><span class="chip"><i class="dot ach"></i>ACh</span></div><div class="entry"><div class="name">Curare</div><div class="line">Competes with acetylcholine at nAChR</div><span class="chip"><i class="dot ach"></i>ACh</span></div>
+        </section>
+        <section class="pane">
+          <div class="pane-head"><h2>Diseases</h2><span>7</span></div>
+          <div class="search"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6" cy="6" r="4.1" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M9.2 9.2 L12.2 12.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> Search diseases</div>
+          <div class="group">Degeneration</div><div class="entry"><div class="name">Parkinson’s</div><div class="line">Dopamine neurons lost; vesicles run low</div><span class="chip"><i class="dot da"></i>DA</span></div><div class="entry"><div class="name">Alzheimer’s</div><div class="line">Cholinergic synapses weaken and drop out</div><span class="chip"><i class="dot ach"></i>ACh</span></div><div class="entry"><div class="name">Multiple sclerosis</div><div class="line">Myelin lost; conduction slows, then blocks</div><span class="chip"><i class="dot axon"></i>Axon</span></div><div class="group">Transmission</div><div class="entry"><div class="name">Epilepsy</div><div class="line">Inhibition down, persistent sodium up</div><span class="chip"><i class="dot glu"></i>GABA</span></div><div class="entry"><div class="name">Myasthenia gravis</div><div class="line">Antibodies remove muscle ACh receptors</div><span class="chip"><i class="dot ach"></i>ACh</span></div><div class="group">Hypothesis models</div><div class="entry on"><div class="name">Depression</div><div class="line">Teaching model of low serotonergic tone</div><span class="chip"><i class="dot ht"></i>5-HT</span></div><div class="entry"><div class="name">Schizophrenia</div><div class="line">Teaching model of excess mesolimbic dopamine</div><span class="chip"><i class="dot da"></i>DA</span></div>
+          <div class="note-card">
+            <strong>How pairing works</strong>
+            <p>A drug and a disease share one synapse when they share a transmitter. Multiple sclerosis stays on the axon whichever synapse you open. A mismatched pair explains itself instead of inventing a cell that does both.</p>
+          </div>
+        </section>
+      </div>
+      <div class="composer">
+        
+    <div class="tune">
+      <div class="tune-top"><span>Dose · sertraline</span><b>0.50</b></div>
+      <div class="track"><div class="fill" style="width:50%"></div><div class="thumb" style="left:50%"></div></div>
+      <p class="hint">SERT clearance falls. A mild autoreceptor keeps release from rising in step.</p>
+    </div>
+        
+    <div class="tune">
+      <div class="tune-top"><span>Severity · depression</span><b>0.60</b></div>
+      <div class="track"><div class="fill" style="width:60%"></div><div class="thumb" style="left:60%"></div></div>
+      <p class="hint">Serotonin synthesis falls. One hypothesis, not the whole illness.</p>
+    </div>
+        <div class="note-card">
+          <strong>These two compose</strong>
+          <p>Cleft serotonin can recover while each impulse still releases less. The acute trace is not the weeks-long clinical response.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
