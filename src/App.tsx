@@ -8,7 +8,7 @@ import { useLab } from './state/lab.tsx'
 export default function App() {
   const lab = useLab()
   return (
-    <div className={`app ${toneClass(lab.params)} ${lab.sheet ? 'sheet' : ''}`}>
+    <div className={`app view-${lab.view} ${toneClass(lab.params)} ${lab.sheet ? 'sheet' : ''}`}>
       <div className="screen">
         <Header />
         {lab.view === 'lab' ? <LabView /> : null}

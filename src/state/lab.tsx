@@ -12,6 +12,8 @@ export interface Selection {
   dose: number
   disease: DiseaseId | null
   severity: number
+  applyDrug: boolean
+  applyDisease: boolean
 }
 
 interface Live {
@@ -33,6 +35,8 @@ interface LabValue {
   selectDisease: (id: DiseaseId | null) => void
   chooseDrug: (id: DrugId | null) => void
   chooseDisease: (id: DiseaseId | null) => void
+  setApplyDrug: (on: boolean) => void
+  setApplyDisease: (on: boolean) => void
   setDose: (dose: number) => void
   setSeverity: (severity: number) => void
   toggleCompare: () => void
@@ -95,8 +99,20 @@ function unit(value: string | null, fallback: number): number {
   return Math.max(0, Math.min(1, n))
 }
 
+function mask(sel: Selection) {
+  return {
+    drug: sel.applyDrug ? sel.drug : null,
+    dose: sel.dose,
+    disease: sel.applyDisease ? sel.disease : null,
+    severity: sel.severity,
+  }
+}
+
 function initialLab(): { view: ViewName; selection: Selection } {
-  const fallback = { view: 'lab' as ViewName, selection: { drug: 'ldopa' as DrugId, dose: 0.42, disease: 'parkinsons' as DiseaseId, severity: 0.8 } }
+  const fallback = {
+    view: 'lab' as ViewName,
+    selection: { drug: 'ldopa' as DrugId, dose: 0.42, disease: 'parkinsons' as DiseaseId, severity: 0.8, applyDrug: true, applyDisease: true },
+  }
   if (typeof window === 'undefined') return fallback
   const params = new URLSearchParams(window.location.search)
   if (!params.has('view') && !params.has('drug') && !params.has('disease')) return fallback
@@ -112,6 +128,8 @@ function initialLab(): { view: ViewName; selection: Selection } {
       disease,
       dose: unit(params.get('dose'), drug ? drugById(drug).defaultDose : 0.5),
       severity: unit(params.get('severity'), disease ? diseaseById(disease).defaultSeverity : 0.7),
+      applyDrug: Boolean(drug),
+      applyDisease: Boolean(disease),
     },
   }
 }
@@ -135,8 +153,9 @@ export function LabProvider({ children }: { children: ReactNode }) {
   const live = useRef<Live>({ cleft: 1, baselineCleft: 1 })
   const listeners = useRef(new Set<() => void>())
 
-  const built = useMemo(() => buildScene(selection, 'condition'), [selection])
-  const baseBuilt = useMemo(() => buildScene(selection, 'baseline'), [selection])
+  const applied = useMemo(() => mask(selection), [selection])
+  const built = useMemo(() => buildScene(applied, 'condition'), [applied])
+  const baseBuilt = useMemo(() => buildScene(applied, 'baseline'), [applied])
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -147,8 +166,8 @@ export function LabProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    const baseParams = buildScene(selectionRef.current, 'baseline').params
-    const condParams = buildScene(selectionRef.current, 'condition').params
+    const baseParams = buildScene(mask(selectionRef.current), 'baseline').params
+    const condParams = buildScene(mask(selectionRef.current), 'condition').params
     const refSim = new Simulator(baseParams, 2)
     refSim.run(1400)
     const cleftRef = Math.max(0.02, refSim.meanN(800))
@@ -171,7 +190,7 @@ export function LabProvider({ children }: { children: ReactNode }) {
     const frame = (now: number) => {
       const dt = Math.min(40, now - last)
       last = now
-      const sel = selectionRef.current
+      const sel = mask(selectionRef.current)
       const cond = buildScene(sel, 'condition')
       const bas = buildScene(sel, 'baseline')
       condition.setParams(cond.params)
@@ -196,7 +215,7 @@ export function LabProvider({ children }: { children: ReactNode }) {
     }
     raf = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(raf)
-  }, [selection.drug, selection.disease])
+  }, [selection.applyDrug ? selection.drug : null, selection.applyDisease ? selection.disease : null])
 
   const subscribe = useCallback((fn: () => void) => {
     listeners.current.add(fn)
@@ -207,9 +226,9 @@ export function LabProvider({ children }: { children: ReactNode }) {
 
   const selectDrug = (id: DrugId | null) => {
     setSelection((prev) => {
-      if (id === null) return { ...prev, drug: null }
-      if (prev.drug === id) return { ...prev, drug: null }
-      return { ...prev, drug: id, dose: drugById(id).defaultDose }
+      if (id === null) return { ...prev, drug: null, applyDrug: false }
+      if (prev.drug === id) return { ...prev, drug: null, applyDrug: false }
+      return { ...prev, drug: id, dose: drugById(id).defaultDose, applyDrug: true }
     })
     setTab('drugs')
     setSheet(false)
@@ -217,9 +236,9 @@ export function LabProvider({ children }: { children: ReactNode }) {
 
   const selectDisease = (id: DiseaseId | null) => {
     setSelection((prev) => {
-      if (id === null) return { ...prev, disease: null }
-      if (prev.disease === id) return { ...prev, disease: null }
-      return { ...prev, disease: id, severity: diseaseById(id).defaultSeverity }
+      if (id === null) return { ...prev, disease: null, applyDisease: false }
+      if (prev.disease === id) return { ...prev, disease: null, applyDisease: false }
+      return { ...prev, disease: id, severity: diseaseById(id).defaultSeverity, applyDisease: true }
     })
     setTab('diseases')
     setSheet(false)
@@ -227,18 +246,18 @@ export function LabProvider({ children }: { children: ReactNode }) {
 
   const chooseDrug = (id: DrugId | null) => {
     setSelection((prev) => {
-      if (id === null) return { ...prev, drug: null }
-      if (prev.drug === id) return prev
-      return { ...prev, drug: id, dose: drugById(id).defaultDose }
+      if (id === null) return { ...prev, drug: null, applyDrug: false }
+      if (prev.drug === id) return { ...prev, applyDrug: true }
+      return { ...prev, drug: id, dose: drugById(id).defaultDose, applyDrug: true }
     })
     setTab('drugs')
   }
 
   const chooseDisease = (id: DiseaseId | null) => {
     setSelection((prev) => {
-      if (id === null) return { ...prev, disease: null }
-      if (prev.disease === id) return prev
-      return { ...prev, disease: id, severity: diseaseById(id).defaultSeverity }
+      if (id === null) return { ...prev, disease: null, applyDisease: false }
+      if (prev.disease === id) return { ...prev, applyDisease: true }
+      return { ...prev, disease: id, severity: diseaseById(id).defaultSeverity, applyDisease: true }
     })
     setTab('diseases')
   }
@@ -257,6 +276,8 @@ export function LabProvider({ children }: { children: ReactNode }) {
     selectDisease,
     chooseDrug,
     chooseDisease,
+    setApplyDrug: (on) => setSelection((prev) => ({ ...prev, applyDrug: on && Boolean(prev.drug) })),
+    setApplyDisease: (on) => setSelection((prev) => ({ ...prev, applyDisease: on && Boolean(prev.disease) })),
     setDose: (dose) => setSelection((prev) => ({ ...prev, dose })),
     setSeverity: (severity) => setSelection((prev) => ({ ...prev, severity })),
     toggleCompare: () => setView((v) => (v === 'compare' ? 'lab' : 'compare')),

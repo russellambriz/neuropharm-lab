@@ -1,4 +1,6 @@
+import { useEffect, useRef } from 'react'
 import { DISEASES, DRUGS, diseaseById } from '../content/library.ts'
+import { labelDisease, labelDrug } from '../model/scene.ts'
 import { useLab } from '../state/lab.tsx'
 import { DossierBody, Search, Slider, formatHz, formatMv } from './bits.tsx'
 import { StageCanvas, TraceCanvas } from './canvases.tsx'
@@ -13,6 +15,7 @@ export function LabView() {
   const pip = lab.params.transmitter === 'da' ? 'var(--da)' : lab.params.transmitter === 'ht' ? 'var(--ht)' : lab.params.transmitter === 'gaba' ? 'var(--gaba)' : lab.params.transmitter === 'ach' ? 'var(--ach)' : 'var(--glu)'
   return (
     <div className="workspace">
+      <PhoneDock />
       <aside className="rail">
         <Search value={lab.query} onChange={lab.setQuery} placeholder="Search the library" />
         <div className="tabs" role="tablist">
@@ -63,7 +66,9 @@ export function LabView() {
               {lab.pairing.note}
             </div>
           ) : null}
-          <StageCanvas sim={lab.condition} which="condition" />
+          <div className="stage-art">
+            <StageCanvas sim={lab.condition} which="condition" />
+          </div>
           <p className="stage-caption">Schematic · bouton enlarged · not to scale</p>
           <div className="legend">
             <span><i className="pip fill" style={{ background: pip }} /> In a vesicle</span>
@@ -75,6 +80,9 @@ export function LabView() {
           <div className="trace-head">
             <h2>{instrument}</h2>
             <p>{comparing ? '400 ms · baseline, then this condition' : '400 ms · afferent held steady'}</p>
+            <button className="phone-note linkish" onClick={() => lab.setView('monograph')}>
+              Notes
+            </button>
           </div>
           {comparing ? (
             <BeforeAfter
@@ -121,6 +129,108 @@ export function LabView() {
           </button>
         </DossierBody>
       </aside>
+    </div>
+  )
+}
+
+function PhoneDock() {
+  const lab = useLab()
+  const { selection } = lab
+  const drugs = lab.tab === 'drugs'
+  const selected = drugs ? selection.drug : selection.disease
+  const value = drugs ? selection.dose : selection.severity
+  const row = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const id = selected ?? 'none'
+    const chip = row.current?.querySelector<HTMLElement>(`[data-chip="${id}"]`)
+    chip?.scrollIntoView({ inline: 'center', block: 'nearest' })
+  }, [selected, drugs])
+  const entries = drugs ? DRUGS : DISEASES
+  return (
+    <div className="dock">
+      <div className="dock-switches">
+        <div className={`dock-side ${lab.tab === 'diseases' ? 'open' : ''}`}>
+          <button
+            type="button"
+            className={`switch ${selection.disease && selection.applyDisease ? 'on' : ''}`}
+            role="switch"
+            aria-checked={Boolean(selection.disease && selection.applyDisease)}
+            aria-label="Apply disease"
+            disabled={!selection.disease}
+            onClick={() => lab.setApplyDisease(!selection.applyDisease)}
+          >
+            <i />
+          </button>
+          <button type="button" className="dock-name" onClick={() => lab.setTab('diseases')}>
+            {selection.disease ? labelDisease(selection.disease) : 'Disease'}
+          </button>
+        </div>
+        <div className={`dock-side ${lab.tab === 'drugs' ? 'open' : ''}`}>
+          <button
+            type="button"
+            className={`switch ${selection.drug && selection.applyDrug ? 'on' : ''}`}
+            role="switch"
+            aria-checked={Boolean(selection.drug && selection.applyDrug)}
+            aria-label="Apply drug"
+            disabled={!selection.drug}
+            onClick={() => lab.setApplyDrug(!selection.applyDrug)}
+          >
+            <i />
+          </button>
+          <button type="button" className="dock-name" onClick={() => lab.setTab('drugs')}>
+            {selection.drug ? labelDrug(selection.drug) : 'Drug'}
+          </button>
+        </div>
+      </div>
+      <div className="chips" ref={row} role="listbox" aria-label={drugs ? 'Drugs' : 'Diseases'}>
+        <button type="button" data-chip="none" className={`chip ${selected ? '' : 'on'}`} onClick={() => (drugs ? lab.chooseDrug(null) : lab.chooseDisease(null))}>
+          None
+        </button>
+        {entries.map((entry) => (
+          <button
+            type="button"
+            key={entry.id}
+            data-chip={entry.id}
+            className={`chip ${selected === entry.id ? 'on' : ''}`}
+            onClick={() => (entry.kind === 'drug' ? lab.chooseDrug(entry.id) : lab.chooseDisease(entry.id))}
+          >
+            {entry.name}
+          </button>
+        ))}
+      </div>
+      <label className={`scale ${selected ? '' : 'idle'}`}>
+        <div className="scale-top">
+          <span>{drugs ? 'Dose' : 'Severity'}</span>
+          <b>{selected ? `${Math.round(value * 100)}%` : '—'}</b>
+        </div>
+        <div className="track">
+          <div className="fill" style={{ width: `${selected ? value * 100 : 0}%` }} />
+          <div className="thumb" style={{ left: `${selected ? value * 100 : 0}%` }} />
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={selected ? Math.round(value * 100) : 0}
+            disabled={!selected}
+            aria-label={drugs ? 'Dose' : 'Severity'}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={selected ? Math.round(value * 100) : 0}
+            aria-valuetext={selected ? `${Math.round(value * 100)} percent` : 'No selection'}
+            onChange={(event) => {
+              const next = Number(event.target.value) / 100
+              if (drugs) lab.setDose(next)
+              else lab.setSeverity(next)
+            }}
+          />
+        </div>
+        <div className="scale-ticks" aria-hidden="true">
+          <span>Low</span>
+          <span>Med</span>
+          <span>High</span>
+        </div>
+      </label>
     </div>
   )
 }
