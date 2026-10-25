@@ -4,6 +4,7 @@ import { labelDisease, labelDrug, sameSynapse } from '../model/scene.ts'
 import { useLab } from '../state/lab.tsx'
 import { DossierBody, Search, Slider, formatHz, formatMv } from './bits.tsx'
 import { StageCanvas, TraceCanvas } from './canvases.tsx'
+import { StageLabels } from './StageLabels.tsx'
 
 export function LabView() {
   const lab = useLab()
@@ -66,10 +67,25 @@ export function LabView() {
               {lab.pairing.note}
             </div>
           ) : null}
+          <div className="stage-tools">
+            <button
+              type="button"
+              className={`switch label-switch ${lab.labels ? 'on' : ''}`}
+              role="switch"
+              aria-checked={lab.labels}
+              aria-label={lab.labels ? 'Labels on' : 'Labels off'}
+              onClick={() => lab.setLabels(!lab.labels)}
+            >
+              <i />
+              <span className="state">{lab.labels ? 'On' : 'Off'}</span>
+              <span>Labels</span>
+            </button>
+          </div>
           <div className="stage-art">
             <StageCanvas sim={lab.condition} which="condition" />
+            {lab.labels ? <StageLabels sim={lab.condition} /> : null}
           </div>
-          <p className="stage-caption">Schematic · bouton enlarged · not to scale</p>
+          <p className="stage-caption">One neuron passing a signal to the next across a synapse.</p>
           <div className="legend">
             <span><i className="pip fill" style={{ background: pip }} /> In a vesicle</span>
             <span><i className="pip empty" /> Empty vesicle</span>

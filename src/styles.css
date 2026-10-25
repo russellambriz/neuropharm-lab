@@ -479,15 +479,42 @@ button:focus-visible, input:focus-visible {
   display: block;
 }
 
-.stage-caption, .legend { z-index: 2; }
+.stage-caption, .legend, .stage-tools { z-index: 3; }
+
+.stage-tools {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 4;
+}
+
+.label-switch {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(14, 15, 12, 0.72);
+  touch-action: manipulation;
+}
+
+.label-switch .state {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
 
 .stage-caption {
   position: absolute;
   left: 4px;
-  bottom: 2px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  right: 4px;
+  bottom: 20px;
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--soft);
 }
 
@@ -500,6 +527,44 @@ button:focus-visible, input:focus-visible {
   font-size: 12px;
   color: var(--muted);
 }
+
+.callouts {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.callouts svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.callouts line {
+  stroke: rgba(212, 180, 131, 0.85);
+  stroke-width: 1;
+}
+
+.callouts circle {
+  fill: var(--brass);
+}
+
+.callout {
+  position: absolute;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.15;
+  letter-spacing: 0.005em;
+  text-shadow: 0 1px 2px rgba(8, 9, 6, 0.95), 0 0 8px rgba(8, 9, 6, 0.9);
+}
+
+.callout span { white-space: nowrap; }
 
 .legend span {
   display: flex;
@@ -1776,10 +1841,27 @@ button.slot {
     height: 100%;
   }
 
+  .view-lab .stage-tools {
+    position: static;
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .view-lab .label-switch {
+    min-height: 44px;
+    height: 44px;
+  }
+
   .view-lab .stage-caption,
   .view-lab .legend {
     position: static;
-    font-size: 10px;
+    font-size: 12px;
+  }
+
+  .view-lab .stage-caption {
+    font-size: 13px;
+    line-height: 1.25;
   }
 
   .view-lab .legend { gap: 8px; }

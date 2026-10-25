@@ -39,6 +39,8 @@ interface LabValue {
   setApplyDisease: (on: boolean) => void
   setDose: (dose: number) => void
   setSeverity: (severity: number) => void
+  labels: boolean
+  setLabels: (on: boolean) => void
   toggleCompare: () => void
   pairing: Pairing
   params: SceneParams
@@ -90,6 +92,15 @@ function isDisease(value: string | null): value is DiseaseId {
 
 function isView(value: string | null): value is ViewName {
   return value === 'lab' || value === 'library' || value === 'monograph' || value === 'compare'
+}
+
+function storedLabels(): boolean {
+  if (typeof window === 'undefined') return true
+  try {
+    return window.localStorage.getItem('npl-labels') !== '0'
+  } catch {
+    return true
+  }
 }
 
 function unit(value: string | null, fallback: number): number {
@@ -165,6 +176,7 @@ export function LabProvider({ children }: { children: ReactNode }) {
   const [readout, setReadout] = useState<Readout>(EMPTY_READOUT)
   const [baselineReadout, setBaselineReadout] = useState<Readout>(EMPTY_READOUT)
   const [reduced, setReduced] = useState(false)
+  const [labels, setLabelsState] = useState(storedLabels)
   const [sims, setSims] = useState<{ condition: Simulator; baseline: Simulator } | null>(null)
 
   const selectionRef = useRef(selection)
@@ -307,6 +319,15 @@ export function LabProvider({ children }: { children: ReactNode }) {
       }),
     setDose: (dose) => setSelection((prev) => ({ ...prev, dose })),
     setSeverity: (severity) => setSelection((prev) => ({ ...prev, severity })),
+    labels,
+    setLabels: (on) => {
+      setLabelsState(on)
+      try {
+        window.localStorage.setItem('npl-labels', on ? '1' : '0')
+      } catch {
+        /* private mode */
+      }
+    },
     toggleCompare: () => setView((v) => (v === 'compare' ? 'lab' : 'compare')),
     pairing: built.pairing,
     params: built.params,

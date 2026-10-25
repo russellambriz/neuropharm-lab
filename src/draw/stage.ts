@@ -1,10 +1,33 @@
-import { INK, MEM, SOFT, transmitterPaint } from './palette.ts'
+import { INK, MEM, transmitterPaint } from './palette.ts'
 import type { Simulator } from '../model/sim.ts'
 
 export interface StageOpts {
   cleft: number
   reduced: boolean
   mini: boolean
+}
+
+export const STAGE_VIEW = { w: 900, h: 450 }
+
+export const STAGE_VESICLES: [number, number][] = [
+  [470, 190], [494, 176], [518, 190], [546, 178],
+  [484, 214], [510, 214], [538, 208],
+  [566, 196], [588, 186], [572, 222], [596, 236], [548, 238],
+]
+
+export function vesiclePointers(fill: number): { full: [number, number]; empty: [number, number] } {
+  let full: [number, number] = STAGE_VESICLES[0]
+  let empty: [number, number] = STAGE_VESICLES[STAGE_VESICLES.length - 1]
+  let sawEmpty = false
+  STAGE_VESICLES.forEach((point, i) => {
+    const threshold = (i + 0.5) / STAGE_VESICLES.length
+    if (fill >= threshold) full = point
+    else if (!sawEmpty) {
+      empty = point
+      sawEmpty = true
+    }
+  })
+  return { full, empty }
 }
 
 export function drawStage(ctx: CanvasRenderingContext2D, w: number, h: number, sim: Simulator, opts: StageOpts): void {
@@ -78,13 +101,8 @@ function drawFull(ctx: CanvasRenderingContext2D, sim: Simulator, opts: StageOpts
   ctx.fill(bouton)
   ctx.stroke(bouton)
 
-  const vesicles: [number, number][] = [
-    [470, 190], [494, 176], [518, 190], [546, 178],
-    [484, 214], [510, 214], [538, 208],
-    [566, 196], [588, 186], [572, 222], [596, 236], [548, 238],
-  ]
-  vesicles.forEach((v, i) => {
-    const threshold = (i + 0.5) / vesicles.length
+  STAGE_VESICLES.forEach((v, i) => {
+    const threshold = (i + 0.5) / STAGE_VESICLES.length
     drawVesicle(ctx, v[0], v[1], sim.vFill >= threshold ? 'full' : 'empty', color, sim.vFill)
   })
 
@@ -167,29 +185,6 @@ function drawFull(ctx: CanvasRenderingContext2D, sim: Simulator, opts: StageOpts
   if (p.showGabaTerminal) drawSmallGaba(ctx, 250, 78, Math.max(0.28, Math.min(1, p.gabaEfficacy)))
 
   drawAxonPulse(ctx, sim, 108, 430, 214)
-
-  label(ctx, 196, 400, 'SOMA')
-  leader(ctx, 154, 250, 188, 388)
-  label(ctx, 284, 178, 'MYELIN')
-  leader(ctx, 274, 186, 274, 202)
-  label(ctx, 248, 268, 'NODE')
-  leader(ctx, 239, 226, 239, 254)
-  label(ctx, 530, 108, 'BOUTON', 'center')
-  leader(ctx, 530, 116, 530, 136)
-  label(ctx, 430, 348, 'VESICLES')
-  leader(ctx, 500, 292, 456, 336)
-  label(ctx, 656, 96, 'CLEFT')
-  leader(ctx, 676, 108, 676, 160)
-  if (p.transporter && p.transporter !== 'AChE') {
-    label(ctx, 648, 128, p.transporter)
-    leader(ctx, 598, 156, 644, 132)
-  }
-  if (p.enzyme === 'ache') label(ctx, 600, 250, 'AChE')
-  if (p.enzyme === 'mao') label(ctx, 600, 368, 'MAO')
-  if (p.enzyme === 'gaba-t') label(ctx, 600, 368, 'GABA-T')
-  label(ctx, 786, 220, p.receptorLabel)
-  leader(ctx, 734, 216, 778, 216)
-  if (p.myelin < 0.95) label(ctx, 400, 268, 'THIN MYELIN')
 }
 
 function drawCloseup(ctx: CanvasRenderingContext2D, sim: Simulator, opts: StageOpts): void {
@@ -361,15 +356,6 @@ function drawPore(ctx: CanvasRenderingContext2D, x: number, y: number, color: st
 
 function strokePaths(ctx: CanvasRenderingContext2D, ds: string[]): void {
   for (const d of ds) ctx.stroke(new Path2D(d))
-}
-
-function leader(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number): void {
-  ctx.strokeStyle = SOFT
-  ctx.lineWidth = 0.7
-  ctx.beginPath()
-  ctx.moveTo(x1, y1)
-  ctx.lineTo(x2, y2)
-  ctx.stroke()
 }
 
 function label(ctx: CanvasRenderingContext2D, x: number, y: number, text: string, align: CanvasTextAlign = 'left'): void {
