@@ -100,4 +100,49 @@ expect('ssri recovers cleft', depSsri.cleft > dep.cleft + 0.05 && depSsri.vesicl
 expect('nicotine nonmonotonic', nicMid.firingHz > nic0.firingHz + 5 && nicMid.firingHz > nicHi.firingHz + 5, `${nic0.firingHz} ${nicMid.firingHz} ${nicHi.firingHz}`)
 expect('ms block', ms.blockFraction > 0.3 && ms.firingHz < 10, `${ms.blockFraction} ${ms.firingHz}`)
 expect('mismatch ignores drug', mismatch.pairing.kind === 'mismatch' && !mismatch.pairing.drugApplied, mismatch.pairing.kind)
+
+const offDrugs: DrugId[] = ['ssri', 'cocaine', 'amphetamine', 'ldopa', 'benzo', 'opioid', 'ketamine', 'alcohol', 'nicotine', 'caffeine', 'botox', 'curare']
+const offDiseases: DiseaseId[] = ['parkinsons', 'alzheimers', 'ms', 'epilepsy', 'myasthenia', 'depression', 'schizophrenia']
+
+function baselineReadout(drug: DrugId | null, disease: DiseaseId | null): Readout {
+  const base = buildScene({ drug, dose: 0, disease, severity: 0 }, 'baseline')
+  const refSim = new Simulator(base.params, 2)
+  refSim.run(1600)
+  const ref = Math.max(0.02, refSim.meanN(800))
+  const sim = new Simulator(base.params, 3)
+  sim.run(2000)
+  return sim.readout(ref)
+}
+
+function matchesBaseline(off: Readout, base: Readout): boolean {
+  return Math.abs(off.firingHz - base.firingHz) < 0.05
+    && Math.abs(off.cleft - base.cleft) < 0.02
+    && Math.abs(off.vesicleFill - base.vesicleFill) < 0.01
+    && Math.abs(off.restMv - base.restMv) < 0.2
+}
+
+for (const id of offDrugs) {
+  const off = run(id, 0, null, 0, 2000)
+  const base = baselineReadout(id, null)
+  const cond = buildScene({ drug: id, dose: 0, disease: null, severity: 0 }, 'condition').params
+  const healthy = buildScene({ drug: id, dose: 0, disease: null, severity: 0 }, 'baseline').params
+  expect(
+    `${id} off equals baseline`,
+    JSON.stringify(cond) === JSON.stringify(healthy) && matchesBaseline(off, base),
+    `fire ${off.firingHz.toFixed(2)} vs ${base.firingHz.toFixed(2)} cleft ${off.cleft.toFixed(3)} vs ${base.cleft.toFixed(3)}`,
+  )
+}
+
+for (const id of offDiseases) {
+  const off = run(null, 0, id, 0, 2000)
+  const base = baselineReadout(null, id)
+  const cond = buildScene({ drug: null, dose: 0, disease: id, severity: 0 }, 'condition').params
+  const healthy = buildScene({ drug: null, dose: 0, disease: id, severity: 0 }, 'baseline').params
+  expect(
+    `${id} off equals baseline`,
+    JSON.stringify(cond) === JSON.stringify(healthy) && matchesBaseline(off, base),
+    `fire ${off.firingHz.toFixed(2)} vs ${base.firingHz.toFixed(2)} cleft ${off.cleft.toFixed(3)} vs ${base.cleft.toFixed(3)}`,
+  )
+}
+
 if (failed) throw new Error('simulation checks failed')

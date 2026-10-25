@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { buildScene } from '../model/scene.ts'
+import { buildScene, sameSynapse } from '../model/scene.ts'
 import { Simulator } from '../model/sim.ts'
 import type { DiseaseId, DrugId, Pairing, Readout, SceneParams } from '../model/types.ts'
 import { diseaseById, drugById } from '../content/library.ts'
@@ -99,19 +99,37 @@ function unit(value: string | null, fallback: number): number {
   return Math.max(0, Math.min(1, n))
 }
 
+function preferApplied(sel: Selection, prefer: 'drug' | 'disease'): Selection {
+  if (!sel.drug || !sel.disease || !sel.applyDrug || !sel.applyDisease) return sel
+  if (sameSynapse(sel.drug, sel.disease)) return sel
+  return prefer === 'drug' ? { ...sel, applyDisease: false } : { ...sel, applyDrug: false }
+}
+
 function mask(sel: Selection) {
+  const drugOn = Boolean(sel.drug && sel.applyDrug)
+  const diseaseOn = Boolean(sel.disease && sel.applyDisease)
+  const conflict = Boolean(sel.drug && sel.disease && !sameSynapse(sel.drug, sel.disease))
+  let drug = sel.drug
+  let disease = sel.disease
+  if (conflict) {
+    if (diseaseOn && !drugOn) drug = null
+    else disease = null
+  }
   return {
-    drug: sel.applyDrug ? sel.drug : null,
-    dose: sel.dose,
-    disease: sel.applyDisease ? sel.disease : null,
-    severity: sel.severity,
+    drug,
+    dose: drugOn ? sel.dose : 0,
+    disease,
+    severity: diseaseOn ? sel.severity : 0,
   }
 }
 
 function initialLab(): { view: ViewName; selection: Selection } {
   const fallback = {
     view: 'lab' as ViewName,
-    selection: { drug: 'ldopa' as DrugId, dose: 0.42, disease: 'parkinsons' as DiseaseId, severity: 0.8, applyDrug: true, applyDisease: true },
+    selection: preferApplied(
+      { drug: 'ldopa' as DrugId, dose: 0.42, disease: 'parkinsons' as DiseaseId, severity: 0.8, applyDrug: true, applyDisease: true },
+      'drug',
+    ),
   }
   if (typeof window === 'undefined') return fallback
   const params = new URLSearchParams(window.location.search)
@@ -123,14 +141,17 @@ function initialLab(): { view: ViewName; selection: Selection } {
   const disease = isDisease(diseaseParam) ? diseaseParam : null
   return {
     view: isView(viewParam) ? viewParam : 'lab',
-    selection: {
-      drug,
-      disease,
-      dose: unit(params.get('dose'), drug ? drugById(drug).defaultDose : 0.5),
-      severity: unit(params.get('severity'), disease ? diseaseById(disease).defaultSeverity : 0.7),
-      applyDrug: Boolean(drug),
-      applyDisease: Boolean(disease),
-    },
+    selection: preferApplied(
+      {
+        drug,
+        disease,
+        dose: unit(params.get('dose'), drug ? drugById(drug).defaultDose : 0.5),
+        severity: unit(params.get('severity'), disease ? diseaseById(disease).defaultSeverity : 0.7),
+        applyDrug: Boolean(drug),
+        applyDisease: Boolean(disease),
+      },
+      'drug',
+    ),
   }
 }
 
@@ -226,9 +247,8 @@ export function LabProvider({ children }: { children: ReactNode }) {
 
   const selectDrug = (id: DrugId | null) => {
     setSelection((prev) => {
-      if (id === null) return { ...prev, drug: null, applyDrug: false }
-      if (prev.drug === id) return { ...prev, drug: null, applyDrug: false }
-      return { ...prev, drug: id, dose: drugById(id).defaultDose, applyDrug: true }
+      if (id === null || prev.drug === id) return { ...prev, drug: null, applyDrug: false }
+      return preferApplied({ ...prev, drug: id, dose: drugById(id).defaultDose, applyDrug: true }, 'drug')
     })
     setTab('drugs')
     setSheet(false)
@@ -236,9 +256,8 @@ export function LabProvider({ children }: { children: ReactNode }) {
 
   const selectDisease = (id: DiseaseId | null) => {
     setSelection((prev) => {
-      if (id === null) return { ...prev, disease: null, applyDisease: false }
-      if (prev.disease === id) return { ...prev, disease: null, applyDisease: false }
-      return { ...prev, disease: id, severity: diseaseById(id).defaultSeverity, applyDisease: true }
+      if (id === null || prev.disease === id) return { ...prev, disease: null, applyDisease: false }
+      return preferApplied({ ...prev, disease: id, severity: diseaseById(id).defaultSeverity, applyDisease: true }, 'disease')
     })
     setTab('diseases')
     setSheet(false)
@@ -247,8 +266,8 @@ export function LabProvider({ children }: { children: ReactNode }) {
   const chooseDrug = (id: DrugId | null) => {
     setSelection((prev) => {
       if (id === null) return { ...prev, drug: null, applyDrug: false }
-      if (prev.drug === id) return { ...prev, applyDrug: true }
-      return { ...prev, drug: id, dose: drugById(id).defaultDose, applyDrug: true }
+      if (prev.drug === id) return preferApplied({ ...prev, applyDrug: true }, 'drug')
+      return preferApplied({ ...prev, drug: id, dose: drugById(id).defaultDose, applyDrug: true }, 'drug')
     })
     setTab('drugs')
   }
@@ -256,8 +275,8 @@ export function LabProvider({ children }: { children: ReactNode }) {
   const chooseDisease = (id: DiseaseId | null) => {
     setSelection((prev) => {
       if (id === null) return { ...prev, disease: null, applyDisease: false }
-      if (prev.disease === id) return { ...prev, applyDisease: true }
-      return { ...prev, disease: id, severity: diseaseById(id).defaultSeverity, applyDisease: true }
+      if (prev.disease === id) return preferApplied({ ...prev, applyDisease: true }, 'disease')
+      return preferApplied({ ...prev, disease: id, severity: diseaseById(id).defaultSeverity, applyDisease: true }, 'disease')
     })
     setTab('diseases')
   }
@@ -276,8 +295,16 @@ export function LabProvider({ children }: { children: ReactNode }) {
     selectDisease,
     chooseDrug,
     chooseDisease,
-    setApplyDrug: (on) => setSelection((prev) => ({ ...prev, applyDrug: on && Boolean(prev.drug) })),
-    setApplyDisease: (on) => setSelection((prev) => ({ ...prev, applyDisease: on && Boolean(prev.disease) })),
+    setApplyDrug: (on) =>
+      setSelection((prev) => {
+        if (!prev.drug) return { ...prev, applyDrug: false }
+        return preferApplied({ ...prev, applyDrug: on }, 'drug')
+      }),
+    setApplyDisease: (on) =>
+      setSelection((prev) => {
+        if (!prev.disease) return { ...prev, applyDisease: false }
+        return preferApplied({ ...prev, applyDisease: on }, 'disease')
+      }),
     setDose: (dose) => setSelection((prev) => ({ ...prev, dose })),
     setSeverity: (severity) => setSelection((prev) => ({ ...prev, severity })),
     toggleCompare: () => setView((v) => (v === 'compare' ? 'lab' : 'compare')),

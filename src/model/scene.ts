@@ -181,6 +181,11 @@ function baseline(kind: SynapseKind): SceneParams {
   }
 }
 
+export function sameSynapse(drug: DrugId, disease: DiseaseId): boolean {
+  if (disease === 'ms') return true
+  return DRUG_SYSTEMS[drug].some((kind) => DISEASE_SYSTEMS[disease].includes(kind))
+}
+
 function preferredSynapse(drug: DrugId | null, disease: DiseaseId | null): SynapseKind {
   if (disease === 'ms') {
     if (drug) return DRUG_SYSTEMS[drug][0]!
@@ -359,14 +364,16 @@ function applyDisease(p: SceneParams, id: DiseaseId, s: number): void {
   if (id === 'epilepsy') {
     p.gabaEfficacy *= 1 - 0.83 * s
     p.gNaP = 0.4 * s
-    p.showGabaTerminal = true
-    p.gGaba = 1.15
+    if (s > 0) {
+      p.showGabaTerminal = true
+      p.gGaba = 1.15
+    }
   }
   if (id === 'depression') p.synthesis *= 1 - 0.65 * s
   if (id === 'myasthenia') {
     p.receptorDensity *= 1 - 0.8 * s
     p.fatigue = s
-    p.train = true
+    if (s > 0) p.train = true
   }
   if (id === 'ms') {
     p.myelin = 1 - s
@@ -383,7 +390,7 @@ function applyDisease(p: SceneParams, id: DiseaseId, s: number): void {
 function applyDrug(p: SceneParams, id: DrugId, d: number, disease: DiseaseId | null, severity: number): void {
   if (id === 'ssri') {
     p.kUptake *= 1 - 0.85 * d
-    p.autoreceptor = 0.28
+    if (d > 0) p.autoreceptor = 0.28
   }
   if (id === 'benzo') p.gabaEfficacy *= 1 + 1.6 * d
   if (id === 'opioid') {
@@ -420,8 +427,10 @@ function applyDrug(p: SceneParams, id: DrugId, d: number, disease: DiseaseId | n
   if (id === 'alcohol') {
     p.gabaEfficacy *= 1 + 0.9 * d
     p.nmdaScale *= 1 - 0.75 * d
-    p.showGabaTerminal = true
-    if (p.synapse === 'glutamate') p.gGaba = Math.max(p.gGaba, 0.3)
+    if (d > 0) {
+      p.showGabaTerminal = true
+      if (p.synapse === 'glutamate') p.gGaba = Math.max(p.gGaba, 0.3)
+    }
   }
   if (id === 'botox') p.pRel *= (1 - d) ** 1.4
   if (id === 'curare') p.receptorDensity *= 1 - 0.95 * d

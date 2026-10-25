@@ -1622,11 +1622,13 @@ button.slot {
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
-    height: 32px;
-    padding: 0 8px 0 4px;
+    gap: 6px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0 10px 0 8px;
     border-radius: 999px;
     border: 1px solid transparent;
+    touch-action: manipulation;
   }
 
   .dock-side.open {
@@ -1636,6 +1638,7 @@ button.slot {
 
   .dock-name {
     min-width: 0;
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1643,9 +1646,21 @@ button.slot {
     text-align: left;
   }
 
-  .dock .switch { font-size: 0; gap: 0; min-height: 0; }
+  .dock .switch { font-size: 12px; gap: 6px; min-height: 44px; }
   .dock .switch i { flex: none; }
-  .dock .switch:disabled { opacity: 0.35; }
+  .dock .switch .state {
+    flex: none;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .dock-note {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.35;
+    color: var(--soft);
+  }
 
   .chips {
     display: flex;
@@ -1677,6 +1692,7 @@ button.slot {
 
   .scale { display: block; touch-action: none; }
   .scale.idle { opacity: 0.45; }
+  .scale.held { opacity: 0.55; }
 
   .scale-top {
     display: flex;

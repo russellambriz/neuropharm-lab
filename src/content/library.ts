@@ -44,7 +44,7 @@ export const DRUGS: DrugEntry[] = [
     line: 'Blocks the serotonin transporter',
     chip: '5-HT',
     chipKind: 'ht',
-    defaultDose: 0.5,
+    defaultDose: 0.85,
     mechanism:
       'Sertraline blocks SERT, the serotonin transporter. Serotonin stays in the cleft longer and postsynaptic receptors see more of it. A mild 5-HT1A autoreceptor on the terminal then eases further release, so the rise is not unlimited. The mood effect in people takes weeks of plasticity. This trace is only the acute cleft.',
     inModel:
@@ -68,7 +68,7 @@ export const DRUGS: DrugEntry[] = [
     line: 'Blocks DAT, NET, and SERT',
     chip: 'DA',
     chipKind: 'da',
-    defaultDose: 0.5,
+    defaultDose: 0.9,
     mechanism:
       'Cocaine blocks the dopamine transporter, and also NET and SERT. Dopamine released by spikes lingers. At a high local concentration it also blocks voltage-gated sodium channels, which is why it is a local anesthetic.',
     inModel:
@@ -278,7 +278,7 @@ export const DRUGS: DrugEntry[] = [
     line: 'Cleaves SNAP-25; fusion stops',
     chip: 'ACh',
     chipKind: 'ach',
-    defaultDose: 0.7,
+    defaultDose: 0.85,
     mechanism:
       'Botulinum toxin type A cleaves SNAP-25. Vesicles still sit on the membrane and do not fuse. Acetylcholine never reaches the cleft. The block is catalytic and lasts weeks in tissue. The slider here is a fraction of release left, so you can see the partial state.',
     inModel:
@@ -301,7 +301,7 @@ export const DRUGS: DrugEntry[] = [
     line: 'Competes with acetylcholine at nAChR',
     chip: 'ACh',
     chipKind: 'ach',
-    defaultDose: 0.7,
+    defaultDose: 0.85,
     mechanism:
       'd-Tubocurarine competes with acetylcholine at the muscle nicotinic receptor. The nerve terminal still releases. The cleft still contains acetylcholine. The receptor is occupied by the antagonist, so the endplate does not reach threshold. Curare does not cross the blood–brain barrier. Someone paralyzed by it is awake unless another drug is added.',
     inModel:

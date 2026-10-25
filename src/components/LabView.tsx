@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { DISEASES, DRUGS, diseaseById } from '../content/library.ts'
-import { labelDisease, labelDrug } from '../model/scene.ts'
+import { labelDisease, labelDrug, sameSynapse } from '../model/scene.ts'
 import { useLab } from '../state/lab.tsx'
 import { DossierBody, Search, Slider, formatHz, formatMv } from './bits.tsx'
 import { StageCanvas, TraceCanvas } from './canvases.tsx'
@@ -139,6 +139,8 @@ function PhoneDock() {
   const drugs = lab.tab === 'drugs'
   const selected = drugs ? selection.drug : selection.disease
   const value = drugs ? selection.dose : selection.severity
+  const live = drugs ? Boolean(selection.drug && selection.applyDrug) : Boolean(selection.disease && selection.applyDisease)
+  const conflict = Boolean(selection.drug && selection.disease && !sameSynapse(selection.drug, selection.disease))
   const row = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const id = selected ?? 'none'
@@ -146,42 +148,38 @@ function PhoneDock() {
     chip?.scrollIntoView({ inline: 'center', block: 'nearest' })
   }, [selected, drugs])
   const entries = drugs ? DRUGS : DISEASES
+  const note = !conflict
+    ? ''
+    : selection.applyDrug && !selection.applyDisease
+      ? `${labelDisease(selection.disease!)} is off. It does not share this synapse.`
+      : selection.applyDisease && !selection.applyDrug
+        ? `${labelDrug(selection.drug!)} is off. It does not share this synapse.`
+        : 'These two do not share a synapse. Turn one on.'
   return (
     <div className="dock">
       <div className="dock-switches">
-        <div className={`dock-side ${lab.tab === 'diseases' ? 'open' : ''}`}>
-          <button
-            type="button"
-            className={`switch ${selection.disease && selection.applyDisease ? 'on' : ''}`}
-            role="switch"
-            aria-checked={Boolean(selection.disease && selection.applyDisease)}
-            aria-label="Apply disease"
-            disabled={!selection.disease}
-            onClick={() => lab.setApplyDisease(!selection.applyDisease)}
-          >
-            <i />
-          </button>
-          <button type="button" className="dock-name" onClick={() => lab.setTab('diseases')}>
-            {selection.disease ? labelDisease(selection.disease) : 'Disease'}
-          </button>
-        </div>
-        <div className={`dock-side ${lab.tab === 'drugs' ? 'open' : ''}`}>
-          <button
-            type="button"
-            className={`switch ${selection.drug && selection.applyDrug ? 'on' : ''}`}
-            role="switch"
-            aria-checked={Boolean(selection.drug && selection.applyDrug)}
-            aria-label="Apply drug"
-            disabled={!selection.drug}
-            onClick={() => lab.setApplyDrug(!selection.applyDrug)}
-          >
-            <i />
-          </button>
-          <button type="button" className="dock-name" onClick={() => lab.setTab('drugs')}>
-            {selection.drug ? labelDrug(selection.drug) : 'Drug'}
-          </button>
-        </div>
+        <DockSwitch
+          open={lab.tab === 'diseases'}
+          on={Boolean(selection.disease && selection.applyDisease)}
+          label={selection.disease ? labelDisease(selection.disease) : 'Disease'}
+          kind="Disease"
+          onPress={() => {
+            lab.setTab('diseases')
+            if (selection.disease) lab.setApplyDisease(!selection.applyDisease)
+          }}
+        />
+        <DockSwitch
+          open={lab.tab === 'drugs'}
+          on={Boolean(selection.drug && selection.applyDrug)}
+          label={selection.drug ? labelDrug(selection.drug) : 'Drug'}
+          kind="Drug"
+          onPress={() => {
+            lab.setTab('drugs')
+            if (selection.drug) lab.setApplyDrug(!selection.applyDrug)
+          }}
+        />
       </div>
+      {note ? <p className="dock-note">{note}</p> : null}
       <div className="chips" ref={row} role="listbox" aria-label={drugs ? 'Drugs' : 'Diseases'}>
         <button type="button" data-chip="none" className={`chip ${selected ? '' : 'on'}`} onClick={() => (drugs ? lab.chooseDrug(null) : lab.chooseDisease(null))}>
           None
@@ -198,7 +196,7 @@ function PhoneDock() {
           </button>
         ))}
       </div>
-      <label className={`scale ${selected ? '' : 'idle'}`}>
+      <label className={`scale ${selected ? '' : 'idle'} ${selected && !live ? 'held' : ''}`}>
         <div className="scale-top">
           <span>{drugs ? 'Dose' : 'Severity'}</span>
           <b>{selected ? `${Math.round(value * 100)}%` : '—'}</b>
@@ -232,6 +230,35 @@ function PhoneDock() {
         </div>
       </label>
     </div>
+  )
+}
+
+function DockSwitch({
+  open,
+  on,
+  label,
+  kind,
+  onPress,
+}: {
+  open: boolean
+  on: boolean
+  label: string
+  kind: 'Drug' | 'Disease'
+  onPress: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className={`dock-side switch ${open ? 'open' : ''} ${on ? 'on' : ''}`}
+      role="switch"
+      aria-checked={on}
+      aria-label={`${kind} ${on ? 'on' : 'off'}`}
+      onClick={onPress}
+    >
+      <i />
+      <span className="state">{on ? 'On' : 'Off'}</span>
+      <span className="dock-name">{label}</span>
+    </button>
   )
 }
 
